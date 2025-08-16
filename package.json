@@ -1,0 +1,19 @@
+{
+  "name": "node-express-basic",
+  "version": "1.0.0",
+  "description": "Node.js와 Express 기본 학습 프로젝트",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js",
+    "dev": "nodemon app.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  },
+  "keywords": ["node", "express", "basic"],
+  "author": "",
+  "license": "ISC"
+}
