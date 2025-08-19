@@ -1,19 +1,32 @@
 {
   "name": "node-express-basic",
+  "type": "module",
   "version": "1.0.0",
   "description": "Node.js와 Express 기본 학습 프로젝트",
-  "main": "app.js",
+  "main": "src/server.ts",
   "scripts": {
-    "start": "node app.js",
-    "dev": "nodemon app.js"
+    "start": "node src/server.ts",
+    "dev": "nodemon src/server.ts"
   },
   "dependencies": {
-    "express": "^4.18.2"
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.1",
+    "express": "^4.18.2",
+    "mysql2": "^3.14.3",
+    "ts-node": "^10.9.2"
   },
   "devDependencies": {
-    "nodemon": "^3.0.1"
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.3",
+    "@types/node": "^24.3.0",
+    "nodemon": "^3.0.1",
+    "typescript": "^5.9.2"
   },
-  "keywords": ["node", "express", "basic"],
+  "keywords": [
+    "node",
+    "express",
+    "basic"
+  ],
   "author": "",
   "license": "ISC"
 }
