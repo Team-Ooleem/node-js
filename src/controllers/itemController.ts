@@ -109,18 +109,22 @@ function extractInitials(str: string) {
 }
 
 export const getSearchResults = async (req: Request, res: Response) => {
-  try {
-    // 여기서 이제 쿼리문으로 뭐가 올수있는지 정해놔야함
+   try {
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.len as string) || 20;
+    const sort = (req.query.sort as string) || "latest";
     const keyword = (req.query.keyword as string) || "";
     const offset = (page - 1) * limit;
-    //console.log("잘뜸", keyword);
+
+    // 정렬 매핑
+    let orderBy = "release_ko DESC"; // 기본 최신순
+    if (sort === "title") orderBy = "display_title ASC";
+    if (sort === "price_asc") orderBy = "list_price ASC";
+    if (sort === "price_desc") orderBy = "list_price DESC";
 
     const normalizedKeyword = extractInitials(keyword);
 
     const [rows] = await pool.query(
-      `
         SELECT * 
         FROM new_view 
         WHERE display_title LIKE ? OR initials LIKE ? 
@@ -150,6 +154,7 @@ export const getSearchResults = async (req: Request, res: Response) => {
     console.error("Error fetching books:", error);
     res.status(500).json({ error: "Internal Server Error" });
   }
+
 };
 
 export const getAutosearchResults = async (req: Request, res: Response) => {
