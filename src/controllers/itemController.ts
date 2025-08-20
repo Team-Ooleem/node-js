@@ -109,53 +109,61 @@ function extractInitials(str: string) {
 }
 
 export const getSearchResults = async (req: Request, res: Response) => {
-   try {
+  try {
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.len as string) || 20;
     const sort = (req.query.sort as string) || "latest";
     const keyword = (req.query.keyword as string) || "";
     const offset = (page - 1) * limit;
 
-    // 정렬 매핑
-    let orderBy = "release_ko DESC"; // 기본 최신순
-    if (sort === "title") orderBy = "display_title ASC";
-    if (sort === "price_asc") orderBy = "list_price ASC";
-    if (sort === "price_desc") orderBy = "list_price DESC";
+    // 정렬 매핑 (화이트리스트)
+    const sortMap: Record<string, string> = {
+      latest: "release_ko DESC",
+      title: "display_title ASC",
+      price_asc: "list_price ASC",
+      price_desc: "list_price DESC",
+    };
+    const orderBy = sortMap[sort] ?? sortMap.latest;
 
     const normalizedKeyword = extractInitials(keyword);
 
+    // 데이터 조회 (정렬 포함)
     const [rows] = await pool.query(
-        SELECT * 
-        FROM new_view 
-        WHERE display_title LIKE ? OR initials LIKE ? 
-        LIMIT ? OFFSET ?
-        `,
+      `
+      SELECT *
+      FROM new_view
+      WHERE display_title LIKE ? OR initials LIKE ?
+      ORDER BY ${orderBy}
+      LIMIT ? OFFSET ?
+      `,
       [`%${keyword}%`, `%${normalizedKeyword}%`, limit, offset]
     );
 
-    const [countResult] = await pool.query(
+    // 총 개수
+    const [countRows] = await pool.query(
       `
-        SELECT COUNT(*) as count 
-        FROM new_view 
-        WHERE display_title LIKE ? OR initials LIKE ?
-        `,
+      SELECT COUNT(*) as count
+      FROM new_view
+      WHERE display_title LIKE ? OR initials LIKE ?
+      `,
       [`%${keyword}%`, `%${normalizedKeyword}%`]
     );
-    const totalCount = (countResult as any)[0].count;
+
+    const totalCount = (countRows as any)[0].count as number;
     const totalPages = Math.ceil(totalCount / limit);
 
     res.json({
       books: rows,
       currentPage: page,
-      totalPages: totalPages,
-      totalCount: totalCount,
+      totalPages,
+      totalCount,
     });
   } catch (error) {
     console.error("Error fetching books:", error);
     res.status(500).json({ error: "Internal Server Error" });
   }
-
 };
+
 
 export const getAutosearchResults = async (req: Request, res: Response) => {
   try {
