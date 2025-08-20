@@ -125,12 +125,9 @@ app.get("/search", async (req, res) => {
 app.get("/api/autocomplete", async (req, res) => {
   try {
     const keyword = req.query.keyword || "";
-    const type = req.query.type || "title";
 
     const [rows] = await pool.query(
-      `SELECT book_id as id, display_title as title, authors as author, cover_image_url as coverImage, list_price as price FROM new_view WHERE ${
-        type === "title" ? "display_title" : "authors"
-      } LIKE ? LIMIT 10`,
+      `SELECT book_id as id, display_title as title, authors as author, cover_image_url as coverImage, list_price as price FROM new_view WHERE display_title LIKE ? LIMIT 10`,
       [`%${keyword}%`]
     );
 
