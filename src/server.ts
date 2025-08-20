@@ -89,17 +89,55 @@ app.get("/api/img", async (req, res) => {
   }
 });
 
+// app.get("/search", async (req, res) => {
+//   try {
+//     // 여기서 이제 쿼리문으로 뭐가 올수있는지 정해놔야함
+//     const page = parseInt(req.query.page as string) || 1;
+//     const limit = parseInt(req.query.len as string) || 20;
+//     const keyword = req.query.keyword || "";
+//     const offset = (page - 1) * limit;
+//     //console.log("잘뜸", keyword);
+
+//     const [rows] = await pool.query(
+//       "SELECT * FROM new_view WHERE display_title LIKE ? LIMIT ? OFFSET ?",
+//       [`%${keyword}%`, limit, offset]
+//     );
+
+//     const [countResult] = await pool.query(
+//       "SELECT COUNT(*) as count FROM new_view WHERE display_title LIKE ?",
+//       [`%${keyword}%`]
+//     );
+//     const totalCount = (countResult as any)[0].count;
+//     const totalPages = Math.ceil(totalCount / limit);
+
+//     res.json({
+//       books: rows,
+//       currentPage: page,
+//       totalPages: totalPages,
+//       totalCount: totalCount,
+//     });
+//   } catch (error) {
+//     console.error("Error fetching books:", error);
+//     res.status(500).json({ error: "Internal Server Error" });
+//   }
+// });
+
 app.get("/search", async (req, res) => {
   try {
-    // 여기서 이제 쿼리문으로 뭐가 올수있는지 정해놔야함
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.len as string) || 20;
     const keyword = req.query.keyword || "";
+    const sort = (req.query.sort as string) || "latest";
     const offset = (page - 1) * limit;
-    //console.log("잘뜸", keyword);
+
+    // 정렬 매핑
+    let orderBy = "release_ko DESC"; // 기본 최신순
+    if (sort === "title") orderBy = "display_title ASC";
+    if (sort === "price_asc") orderBy = "list_price ASC";
+    if (sort === "price_desc") orderBy = "list_price DESC";
 
     const [rows] = await pool.query(
-      "SELECT * FROM new_view WHERE display_title LIKE ? LIMIT ? OFFSET ?",
+      `SELECT * FROM new_view WHERE display_title LIKE ? ORDER BY ${orderBy} LIMIT ? OFFSET ?`,
       [`%${keyword}%`, limit, offset]
     );
 
