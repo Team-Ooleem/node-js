@@ -123,3 +123,48 @@ export const getAutosearchResults = async (req: Request, res: Response) => {
     res.status(500).json({ error: "Internal Server Error" });
   }
 };
+
+export const insertCart = async (req: Request, res: Response) => {
+  const { bookId, quantity } = req.body;
+  console.log(req);
+  const userId = parseInt(req.body.userId);
+  try {
+    await pool.query(
+      "INSERT INTO cart (user_id, book_id, quantity) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE quantity = quantity + ?",
+      [userId, bookId, quantity, quantity]
+    );
+    res.status(201).json({ message: "장바구니에 추가되었습니다." });
+  } catch (err) {
+    res.status(500).json({ message: "서버 오류" });
+  }
+};
+
+export const getCartItems = async (req: Request, res: Response) => {
+  const userId = req.query.user_id;
+  console.log(userId);
+
+  try {
+    const [rows] = await pool.query(
+      `SELECT 
+    c.cart_id,
+    c.user_id,
+    c.book_id,
+    c.quantity,
+    c.added_at,
+    c.updated_at,
+    b.display_title,
+    b.subtitle,
+    b.list_price,
+    b.cover_image_url
+FROM cart AS c
+JOIN new_view AS b
+    ON c.book_id = b.book_id
+WHERE c.user_id = ?;`,
+      [userId]
+    );
+    console.log(rows);
+    res.json({ carts: rows });
+  } catch (err) {
+    res.status(500).json({ message: "장바구니 정보를 불러올 수 없습니다." });
+  }
+};
