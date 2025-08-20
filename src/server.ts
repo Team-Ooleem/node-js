@@ -122,6 +122,28 @@ app.get("/search", async (req, res) => {
   }
 });
 
+app.get("/api/autocomplete", async (req, res) => {
+  try {
+    const keyword = req.query.keyword || "";
+    const type = req.query.type || "title";
+
+    const [rows] = await pool.query(
+      `SELECT book_id as id, display_title as title, authors as author, cover_image_url as coverImage, list_price as price FROM new_view WHERE ${
+        type === "title" ? "display_title" : "authors"
+      } LIKE ? LIMIT 10`,
+      [`%${keyword}%`]
+    );
+
+    res.json({
+      books: rows,
+      keyword: keyword,
+    });
+  } catch (error) {
+    console.error("Error fetching autocomplete:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
 app.listen(port, () => {
   console.log(`Server running on http://localhost:${port}`);
 });
