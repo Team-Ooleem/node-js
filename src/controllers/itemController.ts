@@ -72,12 +72,48 @@ export const getImages = async (req: Request, res: Response) => {
   }
 };
 
+const CHOSUNG = [
+  "ㄱ",
+  "ㄲ",
+  "ㄴ",
+  "ㄷ",
+  "ㄸ",
+  "ㄹ",
+  "ㅁ",
+  "ㅂ",
+  "ㅃ",
+  "ㅅ",
+  "ㅆ",
+  "ㅇ",
+  "ㅈ",
+  "ㅉ",
+  "ㅊ",
+  "ㅋ",
+  "ㅌ",
+  "ㅍ",
+  "ㅎ",
+];
+
+function extractInitials(str: string) {
+  let result = "";
+  for (let ch of str) {
+    const code = ch.charCodeAt(0);
+    if (code >= 0xac00 && code <= 0xd7a3) {
+      const chosungIndex = Math.floor((code - 0xac00) / 588);
+      result += CHOSUNG[chosungIndex];
+    } else {
+      result += ch; // 특수문자, 영어 등 그대로
+    }
+  }
+  return result;
+}
+
 export const getSearchResults = async (req: Request, res: Response) => {
    try {
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.len as string) || 20;
-    const keyword = req.query.keyword || "";
     const sort = (req.query.sort as string) || "latest";
+    const keyword = (req.query.keyword as string) || "";
     const offset = (page - 1) * limit;
 
     // 정렬 매핑
@@ -86,14 +122,24 @@ export const getSearchResults = async (req: Request, res: Response) => {
     if (sort === "price_asc") orderBy = "list_price ASC";
     if (sort === "price_desc") orderBy = "list_price DESC";
 
+    const normalizedKeyword = extractInitials(keyword);
+
     const [rows] = await pool.query(
-      `SELECT * FROM new_view WHERE display_title LIKE ? ORDER BY ${orderBy} LIMIT ? OFFSET ?`,
-      [`%${keyword}%`, limit, offset]
+        SELECT * 
+        FROM new_view 
+        WHERE display_title LIKE ? OR initials LIKE ? 
+        LIMIT ? OFFSET ?
+        `,
+      [`%${keyword}%`, `%${normalizedKeyword}%`, limit, offset]
     );
 
     const [countResult] = await pool.query(
-      "SELECT COUNT(*) as count FROM new_view WHERE display_title LIKE ?",
-      [`%${keyword}%`]
+      `
+        SELECT COUNT(*) as count 
+        FROM new_view 
+        WHERE display_title LIKE ? OR initials LIKE ?
+        `,
+      [`%${keyword}%`, `%${normalizedKeyword}%`]
     );
     const totalCount = (countResult as any)[0].count;
     const totalPages = Math.ceil(totalCount / limit);
@@ -113,11 +159,13 @@ export const getSearchResults = async (req: Request, res: Response) => {
 
 export const getAutosearchResults = async (req: Request, res: Response) => {
   try {
-    const keyword = req.query.keyword || "";
+    const keyword = (req.query.keyword as string) || "";
+
+    const normalizedKeyword = extractInitials(keyword);
 
     const [rows] = await pool.query(
-      `SELECT book_id as id, display_title as title, authors as author, cover_image_url as coverImage, list_price as price FROM new_view WHERE display_title LIKE ? LIMIT 10`,
-      [`%${keyword}%`]
+      `SELECT book_id as id, display_title as title, authors as author, cover_image_url as coverImage, list_price as price FROM new_view WHERE display_title LIKE ? OR initials LIKE ? LIMIT 10`,
+      [`%${keyword}%`, `%${normalizedKeyword}%`]
     );
 
     res.json({
